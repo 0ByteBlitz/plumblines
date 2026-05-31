@@ -250,6 +250,8 @@ docs/
   v0.2-upgrade-notes.md
   record-schema.md
   ci-wiring.md
+  integration.md
+  obsidian.md
 
 templates/
   context-priority.md
@@ -264,27 +266,58 @@ templates/
   risks.md
   followups.md
   compaction.md
+  obsidian/
+    plumblines.base
+    Dashboard.md
 
 scripts/
   plumblines-lib.sh
   check-staleness.sh
   check-completeness.sh
+  plumblines-init.sh
+  plumblines-init.ps1
+
+skills/
+  plumblines-init/SKILL.md
+  plumblines-change/SKILL.md
 ```
 
 ---
 
 ## Quick start
 
-1. Copy the templates into your project under `.agent_files/`.
-2. Fill out `PROJECT_STATE.md`.
-3. Add project-specific rules to `AGENT_RULES.md`.
-4. Add `LOADING_POLICY.md` so agents know what to read and what to skip.
-5. Tell your coding agent to read `.agent_files/AGENT_RULES.md`, `.agent_files/CONTEXT_PRIORITY.md`, and `.agent_files/LOADING_POLICY.md` before modifying code.
-6. After every meaningful change, ask the agent to create a new change record under `.agent_files/local/changes/`.
-7. Add `valid_as_of_commit` and touched/dependent files to state and change records.
-8. Optionally run `scripts/check-staleness.sh` to flag records that may need review.
-9. Run `scripts/check-completeness.sh` in CI or a pre-push hook. See [`docs/ci-wiring.md`](docs/ci-wiring.md).
-10. Compact older records when the history becomes noisy.
+One command scaffolds the whole `.agent_files/` tree, copies templates under
+their canonical names, detects your source directories, writes a `.plumblines`
+config, patches `.gitignore`, and stamps the current commit into the state
+files:
+
+```bash
+bash scripts/plumblines-init.sh            # minimal layout
+bash scripts/plumblines-init.sh --team --hooks --ci
+```
+
+```powershell
+pwsh scripts/plumblines-init.ps1           # Windows
+pwsh scripts/plumblines-init.ps1 -Team -Hooks -Ci
+```
+
+It is idempotent — re-running only adds what is missing. Then:
+
+1. Fill `PROJECT_STATE.md` — or run the **`plumblines-init` agent skill**, which
+   reads your codebase and drafts it from real facts instead of blank prose.
+2. Tell your coding agent to read `.agent_files/AGENT_RULES.md`,
+   `CONTEXT_PRIORITY.md`, and `LOADING_POLICY.md` before modifying code.
+3. After each change, create a record under `.agent_files/local/changes/` (the
+   **`plumblines-change` skill** does this and verifies the gate).
+4. Run `scripts/check-staleness.sh` and `scripts/check-completeness.sh`, in CI
+   or a pre-push hook. See [`docs/ci-wiring.md`](docs/ci-wiring.md).
+5. Compact older records when the history becomes noisy.
+
+Full detail and the manual-copy name mapping: [`docs/integration.md`](docs/integration.md).
+
+Want a visual lens on your records? Plumblines frontmatter maps directly onto
+Obsidian Properties — run the scaffolder with `--obsidian` for ready-made Bases
+and Dataview dashboards, and see [`docs/obsidian.md`](docs/obsidian.md).
 
 ---
 

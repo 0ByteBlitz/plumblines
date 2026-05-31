@@ -57,7 +57,36 @@ pl_trust_rank() {
 }
 
 # All Plumblines record files under .agent_files.
+# Prune non-record subtrees: `templates/` holds blank scaffolds (COMMIT_SHA
+# placeholders, dummy provenance) and `dashboards/` holds Obsidian views —
+# neither are records, so they must never trip the checks.
 pl_records() {
   local root="${1:-.agent_files}"
-  find "$root" -type f -name '*.md' 2>/dev/null
+  find "$root" \( -type d \( -name templates -o -name dashboards \) -prune \) \
+    -o -type f -name '*.md' -print 2>/dev/null
+}
+
+# Load .plumblines config into PLUMBLINES_DIR / PLUMBLINES_SRC_GLOBS.
+# Precedence: existing environment variable > config file > built-in default.
+# Config format is simple `key=value` lines (`#` comments), so the same file
+# is parseable by bash, PowerShell, and node without a YAML dependency.
+pl_load_config() {
+  local cfg="${PLUMBLINES_CONFIG:-.plumblines}"
+  local dir_cfg="" globs_cfg="" line key val
+  if [ -f "$cfg" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|\#*) continue ;; esac
+      key="${line%%=*}"; val="${line#*=}"
+      # trim surrounding whitespace and optional quotes
+      key="$(printf '%s' "$key" | awk '{$1=$1};1')"
+      val="$(printf '%s' "$val" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^["'\'']//; s/["'\'']$//')"
+      case "$key" in
+        agent_dir)  dir_cfg="$val" ;;
+        src_globs)  globs_cfg="$val" ;;
+      esac
+    done < "$cfg"
+  fi
+  PLUMBLINES_DIR="${PLUMBLINES_DIR:-${dir_cfg:-.agent_files}}"
+  PLUMBLINES_SRC_GLOBS="${PLUMBLINES_SRC_GLOBS:-${globs_cfg:-src/ lib/ app/ packages/}}"
+  export PLUMBLINES_DIR PLUMBLINES_SRC_GLOBS
 }

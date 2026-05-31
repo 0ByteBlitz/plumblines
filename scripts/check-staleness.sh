@@ -7,8 +7,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=plumblines-lib.sh
 source "$HERE/plumblines-lib.sh"
+pl_load_config
 
-AGENT_DIR="${PLUMBLINES_DIR:-.agent_files}"
+AGENT_DIR="$PLUMBLINES_DIR"
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "not a git repo"; exit 2; }
 
 stale=0

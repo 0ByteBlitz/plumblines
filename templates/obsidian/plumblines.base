@@ -1,0 +1,78 @@
+# Obsidian Bases dashboard for Plumblines records.
+# Bases is a core plugin (Obsidian 1.9+), no community install needed.
+# It reads the YAML frontmatter of every record as queryable Properties.
+# Open this file in Obsidian; use the view tabs along the top. Row sorting
+# can be toggled from each column header in the view.
+
+formulas:
+  short_commit: 'note.valid_as_of_commit.slice(0, 7)'
+
+properties:
+  note.id:
+    displayName: ID
+  note.trust:
+    displayName: Trust
+  note.validation:
+    displayName: Validation
+  note.record_type:
+    displayName: Type
+  formula.short_commit:
+    displayName: Valid as of
+
+views:
+  # Every change, newest filenames group to the top of their date.
+  - type: table
+    name: Change log
+    filters:
+      and:
+        - note.record_type == "change"
+    order:
+      - file.name
+      - note.trust
+      - note.validation
+      - formula.short_commit
+
+  # Records that need a human: low/declining trust, or failed validation.
+  - type: table
+    name: Needs attention
+    filters:
+      or:
+        - note.trust == "needs-review"
+        - note.trust == "stale"
+        - note.validation == "failed"
+    order:
+      - file.name
+      - note.record_type
+      - note.trust
+      - note.validation
+
+  # Decisions, grouped by how much they're trusted.
+  - type: table
+    name: Decisions
+    filters:
+      and:
+        - note.record_type == "decision"
+    order:
+      - file.name
+      - note.trust
+      - formula.short_commit
+    groupBy:
+      property: note.trust
+      direction: DESC
+
+  # Everything Plumblines tracks, grouped by record type.
+  - type: table
+    name: All records
+    filters:
+      or:
+        - note.record_type == "change"
+        - note.record_type == "state"
+        - note.record_type == "decision"
+    order:
+      - file.name
+      - note.trust
+      - note.validation
+      - formula.short_commit
+    groupBy:
+      property: note.record_type
+      direction: ASC
