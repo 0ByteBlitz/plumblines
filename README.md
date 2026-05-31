@@ -47,6 +47,37 @@ Visual record triage in Obsidian: [`docs/obsidian.md`](docs/obsidian.md).
 
 ---
 
+## Installing the agent skills
+
+The `plumblines-init` and `plumblines-change` skills are optional but remove
+most of the manual work. Each is a directory under `skills/` holding a
+`SKILL.md` with `name`/`description` frontmatter.
+
+**Claude Code** discovers skills placed in a skills directory. Copy them into
+your project (or your home directory to use them everywhere):
+
+```bash
+# project-scoped
+mkdir -p .claude/skills && cp -r skills/plumblines-init skills/plumblines-change .claude/skills/
+# or user-scoped (all projects)
+mkdir -p ~/.claude/skills && cp -r skills/plumblines-init skills/plumblines-change ~/.claude/skills/
+```
+
+```powershell
+# project-scoped
+New-Item -ItemType Directory -Force .claude\skills | Out-Null
+Copy-Item -Recurse skills\plumblines-init, skills\plumblines-change .claude\skills\
+```
+
+Then invoke a skill (e.g. `/plumblines-init`) or let the agent select it by
+description.
+
+**Any other agent:** the skills are plain Markdown instructions — point your
+agent at the relevant `SKILL.md`, or paste its contents, when you want that
+workflow.
+
+---
+
 ## What it creates
 
 ```txt
