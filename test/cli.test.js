@@ -18,6 +18,18 @@ function ok(cond, msg) {
   else { console.log('  FAIL ' + msg); failures++; }
 }
 
+// Equality assertion that, on failure, shows where two strings first diverge.
+function eq(a, b, msg) {
+  if (a === b) { console.log('  ok  ' + msg); return; }
+  failures++;
+  console.log('  FAIL ' + msg);
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  console.log(`    first diff at index ${i} (len a=${a.length} b=${b.length})`);
+  console.log('    a: ' + JSON.stringify(a.slice(Math.max(0, i - 20), i + 20)));
+  console.log('    b: ' + JSON.stringify(b.slice(Math.max(0, i - 20), i + 20)));
+}
+
 function git(args, cwd) {
   execFileSync('git', args, { cwd, stdio: 'ignore' });
 }
@@ -96,8 +108,12 @@ console.log('plumblines CLI test');
   ok(/dependencies changed since/.test(stale.out), 'staleness message printed');
 }
 
-// --- parity with the shell gates (only where bash exists) -------------------
-if (hasBash() && fs.existsSync(path.join(SCRIPTS, 'check-completeness.sh'))) {
+// --- parity with the shell gates --------------------------------------------
+// Only meaningful where `bash` is a POSIX bash operating on native paths. On
+// Windows `bash` often resolves to WSL, which reads the repo through /mnt/c
+// path translation and can't see the records — that breaks byte-equality even
+// though the gates agree. CI runs this on Linux, which is where it counts.
+if (process.platform !== 'win32' && hasBash() && fs.existsSync(path.join(SCRIPTS, 'check-completeness.sh'))) {
   const proj = setupRepo();
   node(['init'], proj); // also drops scripts/ into proj
   const changes = path.join(proj, '.agent_files', 'local', 'changes');
@@ -107,14 +123,15 @@ if (hasBash() && fs.existsSync(path.join(SCRIPTS, 'check-completeness.sh'))) {
 
   const b = run('bash', ['scripts/check-completeness.sh', 'HEAD~1', 'HEAD'], proj);
   const n = node(['check-completeness', 'HEAD~1', 'HEAD'], proj);
-  ok(b.out === n.out, 'completeness output byte-identical to shell gate');
+  eq(b.out, n.out, 'completeness output byte-identical to shell gate');
   ok(b.code === n.code, 'completeness exit code matches shell gate');
 
   const bs = run('bash', ['scripts/check-staleness.sh'], proj);
   const ns = node(['check-staleness'], proj);
-  ok(bs.out === ns.out, 'staleness output byte-identical to shell gate');
+  eq(bs.out, ns.out, 'staleness output byte-identical to shell gate');
 } else {
-  console.log('  --  bash not available; skipping shell-parity checks');
+  const why = process.platform === 'win32' ? 'on Windows (bash path-translation unreliable)' : 'bash not available';
+  console.log(`  --  skipping shell-parity checks: ${why}`);
 }
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILURE(S)`);
