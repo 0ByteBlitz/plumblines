@@ -1,0 +1,72 @@
+# Publish plumblines to npm via OIDC trusted publishing — no npm token stored.
+#
+# Hardening (the May 2026 TanStack attack entered through a CI pipeline):
+#   - Triggered only by version tags pushed by a maintainer.
+#   - Default-deny permissions; the job gets the minimum it needs.
+#   - Third-party actions pinned to commit SHAs (a moved tag is an attack vector).
+#   - An `environment` gate, so the trusted-publisher config can require approval.
+#   - Provenance is generated automatically under trusted publishing.
+#
+# One-time npm-side setup (see SECURITY.md): publish 0.3.0 once manually to
+# create the package, then configure a Trusted Publisher on npmjs.com pointing
+# at this repo + workflow `release.yml` + environment `release`. Pair it with
+# staged publishing so a human must approve each release with 2FA.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+# Default to no permissions; the publish job opts in to exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write   # mint the short-lived OIDC token for trusted publishing
+      contents: read    # checkout
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm (trusted + staged publishing need a recent npm)
+        run: npm install -g npm@latest
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ "$PKG" != "$TAG" ]; then
+            echo "tag v$TAG does not match package.json version $PKG"; exit 1
+          fi
+
+      - name: Tests (incl. Node/shell gate parity)
+        run: node test/cli.test.js
+
+      - name: Skip if this version is already published
+        id: published
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "plumblines@$VERSION" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "plumblines@$VERSION already on npm — nothing to publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish (OIDC trusted publishing; provenance automatic)
+        if: steps.published.outputs.exists == 'false'
+        run: npm publish
