@@ -20,7 +20,22 @@ or docs. The source code is always the final truth.
 One command scaffolds the whole `.agent_files/` tree, copies templates under
 their canonical names, detects your source directories, writes a `.plumblines`
 config, patches `.gitignore`, and stamps the current commit into the state
-files:
+files.
+
+**With npx (nothing to clone, no bash needed):**
+
+```bash
+npx plumblines init                        # minimal layout
+npx plumblines init --team --hooks --ci --obsidian
+# not yet on the npm registry? run straight from the repo:
+npx github:0ByteBlitz/plumblines init
+```
+
+The npx CLI is pure Node (no dependencies) and also runs the gates:
+`npx plumblines check` (completeness, blocking) and `npx plumblines
+check-staleness`.
+
+**From a clone (shell or PowerShell):**
 
 ```bash
 bash scripts/plumblines-init.sh            # minimal layout
@@ -32,7 +47,7 @@ pwsh scripts/plumblines-init.ps1           # Windows
 pwsh scripts/plumblines-init.ps1 -Team -Hooks -Ci
 ```
 
-It is idempotent — re-running only adds what is missing. Then:
+All three are idempotent — re-running only adds what is missing. Then:
 
 1. Fill `PROJECT_STATE.md`, or run the **`plumblines-init` agent skill**, which
    reads your codebase and drafts it from real facts instead of blank prose.
@@ -163,6 +178,7 @@ templates/   the record templates, plus obsidian/ dashboards
 scripts/     plumblines-lib.sh, check-staleness.sh, check-completeness.sh,
              plumblines-init.sh, plumblines-init.ps1
 skills/      plumblines-init, plumblines-change (agent skills)
+cli/         the npx CLI (init + gates), pure Node, no dependencies
 ```
 
 ---

@@ -1,10 +1,32 @@
 # Integrating Plumblines into a project
 
-Three ways in, from least to most automated. They are complementary — the
+Several ways in, from least to most automated. They are complementary — the
 scaffolder does the mechanical setup; the agent skill fills it with real
 content.
 
-## 1. One command (recommended)
+## 0. npx (nothing checked out, no bash)
+
+If you just want it set up and don't have the repo cloned:
+
+```bash
+npx plumblines init [--team] [--hooks] [--ci] [--obsidian]
+# before it's published to npm, run from the repo:
+npx github:0ByteBlitz/plumblines init
+```
+
+The CLI is pure Node (no dependencies). It writes the same tree as the
+scaffolder, plus a copy of the shell `scripts/` so bash/CI wiring works, and it
+also runs the gates in Node so you never need bash:
+
+```bash
+npx plumblines check                 # completeness (blocking) + staleness (report)
+npx plumblines check-completeness origin/main HEAD
+npx plumblines check-staleness
+```
+
+The Node and shell gates are kept byte-for-byte identical by `test/cli.test.js`.
+
+## 1. One command from a clone
 
 From the root of the project you want to add memory to, with the Plumblines
 `scripts/` and `templates/` available:

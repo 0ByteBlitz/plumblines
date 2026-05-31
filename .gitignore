@@ -1,0 +1,4 @@
+# Node / npm artifacts from the CLI package
+node_modules/
+*.tgz
+npm-debug.log*

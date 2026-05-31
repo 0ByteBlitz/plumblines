@@ -1,0 +1,40 @@
+{
+  "name": "plumblines",
+  "version": "0.2.1",
+  "description": "A plain-Markdown project continuity framework for AI coding agents.",
+  "bin": {
+    "plumblines": "cli/index.js"
+  },
+  "files": [
+    "cli/",
+    "templates/",
+    "skills/",
+    "scripts/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/cli.test.js"
+  },
+  "keywords": [
+    "ai-agents",
+    "coding-agents",
+    "context-engineering",
+    "claude-code",
+    "developer-tools"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT",
+  "author": "0ByteBlitz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0ByteBlitz/plumblines.git"
+  },
+  "homepage": "https://github.com/0ByteBlitz/plumblines#readme",
+  "bugs": {
+    "url": "https://github.com/0ByteBlitz/plumblines/issues"
+  }
+}

@@ -5,4 +5,4 @@
 # templates/, not the usual src/ lib/ app/. Without this line the coverage gate
 # would watch directories that don't exist here and silently enforce nothing.
 agent_dir=.agent_files
-src_globs=scripts/ docs/ templates/
+src_globs=scripts/ docs/ templates/ cli/ test/
