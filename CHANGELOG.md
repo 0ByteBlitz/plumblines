@@ -3,6 +3,13 @@
 All notable changes to Plumblines are recorded here. The framework itself is
 plain Markdown; this file tracks the tooling and structure around it.
 
+## 0.3.1 — 2026-05-31
+
+### Changed
+- Simplified the README: lead with `npx plumblines init`, move the principles,
+  trust-order, and repo manifest into the linked docs, and add a "Learn more"
+  table. Removed the stale "not yet on npm" note now that the package is published.
+
 ## 0.3.0 — 2026-05-31
 
 Focus: make Plumblines easy to adopt, and add an npx distribution path.

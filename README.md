@@ -1,189 +1,82 @@
 # Plumblines
 
-**A plain-Markdown project continuity framework for AI coding agents.**
+**A plain-Markdown continuity framework for AI coding agents.**
 
-AI coding agents lose context between sessions: they forget decisions, repeat
-work, and act on stale assumptions. Plumblines gives them a lightweight memory
-system inside a project — a `.agent_files/` directory of Markdown records for
-project state, decisions, change history, risks, and assumptions, anchored to
-commits so stale notes can be detected.
+AI agents forget decisions between sessions and act on stale assumptions.
+Plumblines gives them a `.agent_files/` memory layer — project state, decisions,
+change history, and risks as Markdown records anchored to commits, with gates
+that flag stale or undocumented changes.
 
-It is an **agent coordination layer**, not a replacement for your code, tests,
-or docs. The source code is always the final truth.
-
-**Suggested topics:** `ai-agents`, `coding-agents`, `context-engineering`, `claude-code`, `developer-tools`
-
----
+It's a coordination layer, not a source of truth: the code always wins.
 
 ## Quick start
 
-One command scaffolds the whole `.agent_files/` tree, copies templates under
-their canonical names, detects your source directories, writes a `.plumblines`
-config, patches `.gitignore`, and stamps the current commit into the state
-files.
-
-**With npx (nothing to clone, no bash needed):**
-
 ```bash
-npx plumblines init                        # minimal layout
+npx plumblines init                        # scaffold .agent_files/
 npx plumblines init --team --hooks --ci --obsidian
-# not yet on the npm registry? run straight from the repo:
-npx github:0ByteBlitz/plumblines init
 ```
 
-The npx CLI is pure Node (no dependencies) and also runs the gates:
-`npx plumblines check` (completeness, blocking) and `npx plumblines
-check-staleness`.
+Pure Node, no dependencies, nothing to clone. Then:
 
-**From a clone (shell or PowerShell):**
+1. Fill `PROJECT_STATE.md` — or run the **`plumblines-init`** skill to draft it
+   from your codebase.
+2. Point your agent at `.agent_files/AGENT_RULES.md` before it changes code.
+3. Record each change under `.agent_files/local/changes/` (the
+   **`plumblines-change`** skill does this).
 
-```bash
-bash scripts/plumblines-init.sh            # minimal layout
-bash scripts/plumblines-init.sh --team --hooks --ci
-```
-
-```powershell
-pwsh scripts/plumblines-init.ps1           # Windows
-pwsh scripts/plumblines-init.ps1 -Team -Hooks -Ci
-```
-
-All three are idempotent — re-running only adds what is missing. Then:
-
-1. Fill `PROJECT_STATE.md`, or run the **`plumblines-init` agent skill**, which
-   reads your codebase and drafts it from real facts instead of blank prose.
-2. Tell your agent to read `.agent_files/AGENT_RULES.md`, `CONTEXT_PRIORITY.md`,
-   and `LOADING_POLICY.md` before changing code.
-3. After each change, record one under `.agent_files/local/changes/` (the
-   **`plumblines-change` skill** does this and verifies the gate).
-4. Run the gates (below) in CI or a pre-push hook.
-
-Full detail and the manual-copy name mapping: [`docs/integration.md`](docs/integration.md).
-Visual record triage in Obsidian: [`docs/obsidian.md`](docs/obsidian.md).
-
----
+From a clone instead: `bash scripts/plumblines-init.sh` (or
+`pwsh scripts/plumblines-init.ps1`). Full setup, layouts, and the manual-copy
+mapping: [docs/integration.md](docs/integration.md).
 
 ## Installing the agent skills
 
-The `plumblines-init` and `plumblines-change` skills are optional but remove
-most of the manual work. Each is a directory under `skills/` holding a
-`SKILL.md` with `name`/`description` frontmatter.
-
-**Claude Code** discovers skills placed in a skills directory. Copy them into
-your project (or your home directory to use them everywhere):
+Copy them where your agent looks for skills. For Claude Code:
 
 ```bash
-# project-scoped
-mkdir -p .claude/skills && cp -r skills/plumblines-init skills/plumblines-change .claude/skills/
-# or user-scoped (all projects)
-mkdir -p ~/.claude/skills && cp -r skills/plumblines-init skills/plumblines-change ~/.claude/skills/
+cp -r skills/plumblines-init skills/plumblines-change .claude/skills/   # or ~/.claude/skills/
 ```
 
-```powershell
-# project-scoped
-New-Item -ItemType Directory -Force .claude\skills | Out-Null
-Copy-Item -Recurse skills\plumblines-init, skills\plumblines-change .claude\skills\
-```
-
-Then invoke a skill (e.g. `/plumblines-init`) or let the agent select it by
-description.
-
-**Any other agent:** the skills are plain Markdown instructions — point your
-agent at the relevant `SKILL.md`, or paste its contents, when you want that
-workflow.
-
----
+PowerShell: `Copy-Item -Recurse skills\plumblines-init, skills\plumblines-change .claude\skills\`.
+Other agents: point them at the `SKILL.md` files directly — they're plain Markdown.
 
 ## What it creates
 
 ```txt
 .agent_files/
-  AGENT_RULES.md          # how the agent should use the memory
-  CONTEXT_PRIORITY.md     # which sources to trust when they conflict
-  LOADING_POLICY.md       # what to read per task type
-  PROJECT_STATE.md        # current state, architecture, decisions
-  local/
-    WORKING_STATE.md      # branch-local scratch (usually gitignored)
-    changes/              # one record per change
-  compacted/              # summaries of older records
-  templates/
+  AGENT_RULES.md        # how the agent uses the memory
+  CONTEXT_PRIORITY.md   # which sources win when they conflict
+  LOADING_POLICY.md     # what to read per task
+  PROJECT_STATE.md      # state, architecture, decisions
+  local/changes/        # one record per change
+  compacted/            # summaries of older records
 ```
 
-For large or multi-team codebases, add a `--team` layout with `shared/`
-(cross-cutting state, decision log, known risks) and `domains/<domain>/STATE.md`
-so agents load only the relevant domain. See the structures in
-[`docs/integration.md`](docs/integration.md).
+`--team` adds `shared/` and `domains/<domain>/` for large codebases.
 
----
+## How it works
 
-## Core principles
-
-1. **Code is the final truth.** Memory helps agents understand faster; it never
-   replaces reading the code.
-2. **Memory is labelled.** Every record carries a trust level: `verified`,
-   `inferred`, `assumed`, `needs-review`, or `stale`.
-3. **Memory is anchored to commits.** Records include `valid_as_of_commit` so a
-   record can be flagged when the files it depends on change later.
-4. **Trust does not escalate.** A record's `trust` cannot exceed the lowest
-   `trust` among its provenance inputs.
-5. **Agents load selectively.** Read the relevant domain and recent records, not
-   the whole tree.
-6. **Every change leaves a trail.** Record what changed, why, files touched,
-   validation, risks, follow-ups, and links to tickets/PRs/commits.
-7. **Memory is compacted.** After ~10 records or a large task, fold older notes
-   into a summary.
-
-When sources conflict, trust order is: source code → tests → schemas/migrations
-→ CI config → official docs → ADRs → tickets/PRs/commits → `.agent_files/shared`
-→ `domains` → `local` → agent assumptions.
-
----
-
-## The gates
+- Each record carries a **trust** label (`verified`, `inferred`, `assumed`,
+  `needs-review`, `stale`) and a `valid_as_of_commit`, so memory can be flagged
+  when its dependencies change.
+- Two gates keep it honest — **staleness** reports records whose deps moved;
+  **completeness** blocks source commits with no change record (and trust that
+  escalates above its inputs):
 
 ```bash
-bash scripts/check-staleness.sh                  # report (non-blocking)
-bash scripts/check-completeness.sh origin/main HEAD   # enforce (blocking)
+npx plumblines check          # completeness (blocking) + staleness (report)
 ```
 
-- **Staleness** flags records whose `depends_on` files changed after their
-  `valid_as_of_commit`. Review and re-label or update them.
-- **Completeness** enforces that every source-touching commit in a range has a
-  change record, and that trust labels do not escalate.
+## Learn more
 
-Both share one deterministic frontmatter parser (`scripts/plumblines-lib.sh`)
-and read `agent_dir` / `src_globs` from `.plumblines`. The gates check that a
-record *exists* and that trust is honest — not that the prose is accurate; that
-still needs human review. See [`docs/ci-wiring.md`](docs/ci-wiring.md) and
-[`docs/record-schema.md`](docs/record-schema.md).
-
----
-
-## Git strategy
-
-Solo projects can gitignore the whole tree (`.agent_files/`). Teams commit the
-reviewed shared context and keep only branch-local state out:
-
-```gitignore
-.agent_files/local/
-```
-
----
-
-## What's in this repository
-
-```txt
-docs/        framework.md, skill.md, record-schema.md, ci-wiring.md,
-             integration.md, obsidian.md, v0.2-upgrade-notes.md
-templates/   the record templates, plus obsidian/ dashboards
-scripts/     plumblines-lib.sh, check-staleness.sh, check-completeness.sh,
-             plumblines-init.sh, plumblines-init.ps1
-skills/      plumblines-init, plumblines-change (agent skills)
-cli/         the npx CLI (init + gates), pure Node, no dependencies
-```
-
----
+| Doc | What |
+|---|---|
+| [integration.md](docs/integration.md) | install paths, layouts, name mapping |
+| [framework.md](docs/framework.md) | the full model and principles |
+| [record-schema.md](docs/record-schema.md) | the frontmatter contract |
+| [ci-wiring.md](docs/ci-wiring.md) | hooks and CI |
+| [obsidian.md](docs/obsidian.md) | record dashboards in Obsidian |
 
 ## Status
 
-Public framework draft, v0.3.0. Plain Markdown throughout, so it works with any
-coding agent, editor, or repository.
+v0.3.1 — public draft. Plain Markdown throughout; works with any coding agent,
+editor, or repository.
