@@ -1,0 +1,28 @@
+name: plumblines
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Completeness gate (blocking)
+        run: bash scripts/check-completeness.sh "origin/${{ github.base_ref || 'main' }}" HEAD
+      - name: Staleness report (non-blocking)
+        run: bash scripts/check-staleness.sh || true
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      # Runs the CLI behaviour tests and asserts the Node gates stay
+      # byte-for-byte identical to the shell gates.
+      - name: CLI + gate-parity tests
+        run: node test/cli.test.js

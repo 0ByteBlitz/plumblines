@@ -185,5 +185,5 @@ cli/         the npx CLI (init + gates), pure Node, no dependencies
 
 ## Status
 
-Public framework draft, v0.2.1. Plain Markdown throughout, so it works with any
+Public framework draft, v0.3.0. Plain Markdown throughout, so it works with any
 coding agent, editor, or repository.

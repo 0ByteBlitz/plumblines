@@ -17,7 +17,7 @@ depends_on:
   - .gitattributes
   - .plumblines
   - README.md
-trust: verified
+trust: needs-review
 provenance:
   - { source: scripts/plumblines-lib.sh, trust: verified }
   - { source: scripts/check-completeness.sh, trust: verified }
@@ -31,6 +31,13 @@ validation: passed
 risks: see-body
 followups: see-body
 ---
+
+> **needs-review (2026-05-31):** `README.md`, `docs/integration.md`, and
+> `.plumblines` were extended by the npx CLI change
+> ([[2026-05-31-npx-cli]]) — the quick start now leads with npx, integration.md
+> gained a section 0, and `src_globs` grew to include `cli/` and `test/`. The
+> scaffolder/skills/Obsidian content below is unchanged; re-verify the doc and
+> config references against current files before relying on this record.
 
 # Make Plumblines easy to integrate, plus Obsidian support
 
